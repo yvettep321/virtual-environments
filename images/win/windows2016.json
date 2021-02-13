@@ -13,7 +13,7 @@
         "virtual_network_resource_group_name": "{{env `VNET_RESOURCE_GROUP`}}",
         "virtual_network_subnet_name": "{{env `VNET_SUBNET`}}",
         "private_virtual_network_with_public_ip": "{{env `PRIVATE_VIRTUAL_NETWORK_WITH_PUBLIC_IP`}}",
-        "vm_size": "Standard_DS4_v2",
+        "vm_size": "Standard_D8s_v4",
         "run_scan_antivirus": "false",
         "root_folder": "C:",
         "toolset_json_path": "{{env `TEMP`}}\\toolset.json",
@@ -21,18 +21,16 @@
         "imagedata_file": "C:\\imagedata.json",
         "helper_script_folder": "C:\\Program Files\\WindowsPowerShell\\Modules\\",
         "psmodules_root_folder": "C:\\Modules",
+        "agent_tools_directory": "C:\\hostedtoolcache\\windows",
         "install_user": "installer",
         "install_password": null,
         "capture_name_prefix": "packer",
         "image_version": "dev",
-        "image_os": "win16",
-        "github_feed_token": "{{env `GITHUB_FEED_TOKEN`}}",
-        "announcements": "{{env `ANNOUNCEMENTS`}}"
+        "image_os": "win16"
     },
     "sensitive-variables": [
         "install_password",
-        "client_secret",
-        "github_feed_token"
+        "client_secret"
     ],
     "builders": [
         {
@@ -94,11 +92,6 @@
         },
         {
             "type": "file",
-            "source": "{{template_dir}}/toolsets/toolcache-2016.json",
-            "destination": "{{user `root_folder`}}/toolcache.json"
-        },
-        {
-            "type": "file",
             "source": "{{template_dir}}/toolsets/toolset-2016.json",
             "destination": "{{user `toolset_json_path`}}"
         },
@@ -120,7 +113,9 @@
         {
             "type": "powershell",
             "environment_vars": [
-                "ImageVersion={{user `image_version`}}",
+                "IMAGE_VERSION={{user `image_version`}}",
+                "IMAGE_OS={{user `image_os`}}",
+                "AGENT_TOOLSDIRECTORY={{user `agent_tools_directory`}}",
                 "TOOLSET_JSON_PATH={{user `toolset_json_path`}}",
                 "PSMODULES_ROOT_FOLDER={{user `psmodules_root_folder`}}"
             ],
@@ -144,16 +139,10 @@
         },
         {
             "type": "powershell",
-            "inline": [
-                "setx ImageVersion {{user `image_version` }} /m",
-                "setx ImageOS {{user `image_os` }} /m"
-            ]
-        },
-        {
-            "type": "powershell",
             "environment_vars": [
                 "IMAGE_VERSION={{user `image_version`}}",
-                "IMAGEDATA_FILE={{user `imagedata_file`}}"
+                "IMAGEDATA_FILE={{user `imagedata_file`}}",
+                "TOOLSET_JSON_PATH={{user `toolset_json_path`}}"
             ],
             "scripts": [
                 "{{ template_dir }}/scripts/Installers/Update-ImageData.ps1",
@@ -176,6 +165,7 @@
             ],
             "scripts": [
                 "{{ template_dir }}/scripts/Installers/Update-DockerImages.ps1",
+                "{{ template_dir }}/scripts/Installers/Install-KubernetesTools.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-VS.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-NET48.ps1",
                 "{{ template_dir }}/scripts/Installers/Windows2016/Install-SSDT.ps1"
@@ -208,6 +198,9 @@
         },
         {
             "type": "powershell",
+            "environment_vars": [
+                "TOOLSET_JSON_PATH={{user `toolset_json_path`}}"
+            ],
             "scripts": [
                 "{{ template_dir }}/scripts/Installers/Install-AzureCli.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-AzureDevOpsCli.ps1",
@@ -226,17 +219,17 @@
         {
             "type": "powershell",
             "environment_vars": [
-                "GITHUB_FEED_TOKEN={{ user `github_feed_token` }}",
                 "TOOLSET_JSON_PATH={{user `toolset_json_path`}}",
                 "ROOT_FOLDER={{user `root_folder`}}"
             ],
             "scripts": [
-                "{{ template_dir }}/scripts/Installers/Download-ToolCache.ps1",
+                "{{ template_dir }}/scripts/Installers/Install-Ruby.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-PyPy.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-Toolset.ps1",
                 "{{ template_dir }}/scripts/Installers/Configure-Toolset.ps1",
-                "{{ template_dir }}/scripts/Installers/Install-YAMLLint.ps1",
-                "{{ template_dir }}/scripts/Installers/Update-AndroidSDK.ps1"
+                "{{ template_dir }}/scripts/Installers/Update-AndroidSDK.ps1",
+                "{{ template_dir }}/scripts/Installers/Install-Pipx.ps1",
+                "{{ template_dir }}/scripts/Installers/Install-PipxPackages.ps1"
             ]
         },
         {
@@ -255,7 +248,9 @@
                 "{{ template_dir }}/scripts/Installers/Install-Edge.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-Firefox.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-Selenium.ps1",
-                "{{ template_dir }}/scripts/Installers/Install-IEWebDriver.ps1"
+                "{{ template_dir }}/scripts/Installers/Install-IEWebDriver.ps1",
+                "{{ template_dir }}/scripts/Installers/Install-Apache.ps1",
+                "{{ template_dir }}/scripts/Installers/Install-Nginx.ps1"
             ]
         },
         {
@@ -284,6 +279,9 @@
         },
         {
             "type": "powershell",
+            "environment_vars": [
+                "TOOLSET_JSON_PATH={{user `toolset_json_path`}}"
+            ],
             "scripts": [
                 "{{ template_dir }}/scripts/Installers/Install-VSWhere.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-WinAppDriver.ps1",
@@ -321,8 +319,6 @@
                 "{{ template_dir }}/scripts/Installers/Install-NSIS.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-CloudFoundryCli.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-Vcpkg.ps1",
-                "{{ template_dir }}/scripts/Installers/Install-KubernetesCli.ps1",
-                "{{ template_dir }}/scripts/Installers/Install-Kind.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-MongoDB.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-GoogleCloudSDK.ps1",
                 "{{ template_dir }}/scripts/Installers/Install-CodeQLBundle.ps1"
@@ -359,8 +355,8 @@
                 "pwsh -File '{{user `image_folder`}}\\SoftwareReport\\SoftwareReport.Generator.ps1'"
             ],
             "environment_vars": [
-                "TOOLSET_JSON_PATH={{user `toolset_json_path`}}",
-                "ANNOUNCEMENTS={{user `announcements`}}"
+                "IMAGE_VERSION={{user `image_version`}}",
+                "TOOLSET_JSON_PATH={{user `toolset_json_path`}}"
             ]
         },
         {

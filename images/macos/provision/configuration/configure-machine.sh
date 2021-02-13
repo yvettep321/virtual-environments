@@ -1,9 +1,13 @@
 #!/bin/bash -e -o pipefail
 
+echo "Enabling safari driver..."
 # https://developer.apple.com/documentation/webkit/testing_with_webdriver_in_safari
 # Safari’s executable is located at /usr/bin/safaridriver
 # Configure Safari to Enable WebDriver Support
 sudo safaridriver --enable
+
+echo "Enabling developer mode..."
+sudo /usr/sbin/DevToolsSecurity --enable
 
 # Turn off hibernation and get rid of the sleepimage
 sudo pmset hibernatemode 0
@@ -20,3 +24,11 @@ sudo "/Library/Application Support/VMware Tools/vmware-resolutionSet" 1176 885
 curl https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer --output $HOME/AppleWWDRCAG3.cer --silent
 sudo security add-trusted-cert -d -r unspecified -k /Library/Keychains/System.keychain $HOME/AppleWWDRCAG3.cer
 rm $HOME/AppleWWDRCAG3.cer
+
+# Create symlink for tests running
+if [ ! -d "/usr/local/bin" ];then
+    sudo mkdir -p -m 775 /usr/local/bin
+    sudo chown $USER:admin /usr/local/bin
+fi
+chmod +x $HOME/utils/invoke-tests.sh
+sudo ln -s $HOME/utils/invoke-tests.sh /usr/local/bin/invoke_tests

@@ -1,7 +1,6 @@
-Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Helpers.psm1") -DisableNameChecking
-
-function Get-OSName {
-    lsb_release -ds
+function Get-BashVersion {
+    $version = bash -c 'echo ${BASH_VERSION}'
+    return "Bash $version"
 }
 
 function Get-CPPVersions {
@@ -49,6 +48,11 @@ function Get-NodeVersion {
     return "Node $nodeVersion"
 }
 
+function Get-PerlVersion {
+    $version = $(perl -e 'print substr($^V,1)')
+    return "Perl $version"
+}
+
 function Get-PythonVersion {
     $result = Get-CommandResult "python --version"
     $version = $result.Output | Take-OutputPart -Part 1
@@ -85,6 +89,13 @@ function Get-HomebrewVersion {
     $result.Output -match "Homebrew (?<version>\d+\.\d+\.\d+)" | Out-Null
     $version = $Matches.version
     return "Homebrew $version"
+}
+
+function Get-CpanVersion {
+    $result = Get-CommandResult "cpan --version"
+    $result.Output -match "version (?<version>\d+\.\d+) " | Out-Null
+    $cpanVersion = $Matches.version
+    return "cpan $cpanVersion"
 }
 
 function Get-GemVersion {
@@ -133,7 +144,8 @@ function Get-VcpkgVersion {
     $result = Get-CommandResult "vcpkg version"
     $result.Output -match "version (?<version>\d+\.\d+\.\d+)" | Out-Null
     $vcpkgVersion = $Matches.version
-    return "Vcpkg $vcpkgVersion"
+    $commitId = git -C "/usr/local/share/vcpkg" rev-parse --short HEAD
+    return "Vcpkg $vcpkgVersion (build from master \<$commitId>)"
 }
 
 function Get-AntVersion {
@@ -228,6 +240,21 @@ function Get-AzModuleVersions {
     return $azModuleVersions
 }
 
+function Get-PowerShellModules {
+    $modules = (Get-ToolsetContent).powershellModules.name
+
+    $psModules = Get-Module -Name $modules -ListAvailable | Sort-Object Name | Group-Object Name
+    $psModules | ForEach-Object {
+        $moduleName = $_.Name
+        $moduleVersions = ($_.group.Version | Sort-Object -Unique) -join '<br>'
+
+        [PSCustomObject]@{
+            Module = $moduleName
+            Version = $moduleVersions
+        }
+    }
+}
+
 function Get-DotNetCoreSdkVersions {
     $unsortedDotNetCoreSdkVersion = dotnet --list-sdks list | ForEach-Object { $_ | Take-OutputPart -Part 0 }
     $dotNetCoreSdkVersion = $unsortedDotNetCoreSdkVersion -join " "
@@ -238,6 +265,17 @@ function Get-CachedDockerImages {
     $toolsetJson = Get-ToolsetContent
     $images = $toolsetJson.docker.images
     return $images
+}
+
+function Get-CachedDockerImagesTableData {
+    return (sudo docker images --digests --format "*{{.Repository}}:{{.Tag}}|{{.Digest}} |{{.CreatedAt}}").Split("*")     | Where-Object { $_ } |  ForEach-Object {
+      $parts=$_.Split("|")
+      [PSCustomObject] @{
+             "Repository:Tag" = $parts[0]
+              "Digest" = $parts[1]
+              "Created" = $parts[2].split(' ')[0]
+         }
+    }
 }
 
 function Get-AptPackages {
@@ -252,4 +290,37 @@ function Get-PipxVersion {
     $result -match "(?<version>\d+\.\d+\.\d+\.?\d*)" | Out-Null
     $pipxVersion = $Matches.Version
     return "Pipx $pipxVersion"
+}
+
+function Get-GraalVMVersion {
+    $version = & "$env:GRAALVM_11_ROOT\bin\java" --version | Select-String -Pattern "GraalVM" | Take-OutputPart -Part 5,6
+    return $version
+}
+
+function Build-GraalVMTable {
+    $version = Get-GraalVMVersion
+    $envVariables = "GRAALVM_11_ROOT"
+
+    return [PSCustomObject] @{
+        "Version" = $version
+        "Environment variables" = $envVariables
+    }
+}
+
+function Build-PackageManagementEnvironmentTable {
+    return @(
+        @{
+            "Name" = "CONDA"
+            "Value" = $env:CONDA
+        },
+        @{
+            "Name" = "VCPKG_INSTALLATION_ROOT"
+            "Value" = $env:VCPKG_INSTALLATION_ROOT
+        }
+    ) | ForEach-Object {
+        [PSCustomObject] @{
+            "Name" = $_.Name
+            "Value" = $_.Value
+        }
+    }
 }

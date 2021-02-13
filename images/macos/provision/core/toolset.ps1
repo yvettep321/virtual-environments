@@ -3,7 +3,7 @@
 ##  Team:  CI-Build
 ##  Desc:  Install toolset
 ################################################################################
-
+Import-Module "~/image-generation/helpers/Tests.Helpers.psm1"
 Import-Module "~/image-generation/helpers/Common.Helpers.psm1"
 
 Function Get-ToolcacheFromToolset {
@@ -23,7 +23,7 @@ Function Install-Asset {
     $assetArchivePath = Join-Path $assetFolderPath $ReleaseAsset.filename
 
     Write-Host "Download $($ReleaseAsset.filename) archive to the $assetFolderPath folder..."
-    wget -P $assetFolderPath $ReleaseAsset.download_url --retry-connrefused --retry-on-http-error=429,500,503 --wait=30 --no-verbose
+    Start-DownloadWithRetry -Url $ReleaseAsset.download_url -DownloadPath $assetFolderPath
 
     Write-Host "Extract $($ReleaseAsset.filename) content..."
     tar -xzf $assetArchivePath -C $assetFolderPath
@@ -58,3 +58,5 @@ foreach ($tool in $tools) {
         }
     }
 }
+
+Invoke-PesterTests "Toolcache"

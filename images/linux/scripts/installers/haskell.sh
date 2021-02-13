@@ -13,9 +13,9 @@ apt-get install -y software-properties-common
 add-apt-repository -y ppa:hvr/ghc
 apt-get update
 
-# Get 3 latest Haskell Major.Minor versions
+# Get 2 latest Haskell Major.Minor versions
 allGhcVersions=$(apt-cache search "^ghc-" | grep -Po '(\d*\.){2}\d*' | sort --unique --version-sort)
-ghcMajorMinorVersions=$(echo "$allGhcVersions" | cut -d "." -f 1,2 | sort --unique --version-sort | tail -3)
+ghcMajorMinorVersions=$(echo "$allGhcVersions" | cut -d "." -f 1,2 | sort --unique --version-sort | tail -2)
 
 for version in $ghcMajorMinorVersions; do
     # Get latest patch version for given Major.Minor one (ex. 8.6.5 for 8.6) and install it
@@ -33,27 +33,8 @@ apt-get install -y cabal-install-$cabalVersion
 # Install the latest stable release of haskell stack
 curl -sSL https://get.haskellstack.org/ | sh
 
-# Run tests to determine that the software installed as expected
-echo "Testing to make sure that script performed as expected, and basic scenarios work"
-# Check all ghc versions
-for version in ${ghcInstalledVersions[@]}; do
-    if ! command -v /opt/ghc/$version/bin/ghc; then
-        echo "ghc $version was not installed"
-        exit 1
-    fi
-done
-
-# Check cabal
-if ! command -v /opt/cabal/$cabalVersion/bin/cabal; then
-    echo "cabal $cabalVersion was not installed"
-    exit 1
-fi
-
-# Check stack
-if ! command -v stack; then
-    exit 1
-fi
-
 # Create symlink for ghc and cabal in /usr/bin
 ln -s "/opt/ghc/$defaultGHCVersion/bin/ghc" "/usr/bin/ghc"
 ln -s "/opt/cabal/$cabalVersion/bin/cabal" "/usr/bin/cabal"
+
+invoke_tests "Haskell"

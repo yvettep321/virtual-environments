@@ -1,17 +1,15 @@
 Import-Module "$PSScriptRoot/../helpers/Common.Helpers.psm1"
-Import-Module "$PSScriptRoot/../helpers/Tests.Helpers.psm1"
+Import-Module "$PSScriptRoot/../helpers/Tests.Helpers.psm1" -DisableNameChecking
 
-#Java tests are disabled because Java is not working properly on macOS 11.0 yet.
-$os = Get-OSVersion
 function Get-NativeVersionFormat {
     param($Version)
-    if ($Version -in "7", "8") {
+    if ($Version -in "8") {
         return "1.${Version}"
     }
     return $Version
 }
 
-Describe "Java" -Skip:($os.IsBigSur) {
+Describe "Java" {
     BeforeAll {
         function Validate-JavaVersion {
             param($JavaCommand, $ExpectedVersion)
@@ -37,24 +35,48 @@ Describe "Java" -Skip:($os.IsBigSur) {
                 "/usr/libexec/java_home -v${Version}" | Should -ReturnZeroExitCode
             }
 
-            It "Version is valid" -TestCases $_ {
-                $javaRootPath = (Get-CommandResult "/usr/libexec/java_home -v${Version}").Output
-                $javaBinPath = Join-Path $javaRootPath "/bin/java"
-                Validate-JavaVersion -JavaCommand "$javaBinPath -version" -ExpectedVersion $Version
+            if ($_.Title -ne "Default") {
+                It "Version is valid" -TestCases $_ {
+                    $javaRootPath = "/Library/Java/JavaVirtualMachines/adoptopenjdk-${Title}.jdk/Contents/Home"
+                    $javaBinPath = Join-Path $javaRootPath "/bin/java"
+                    Validate-JavaVersion -JavaCommand "$javaBinPath -version" -ExpectedVersion $Version
+                }
             }
 
             It "<EnvVariable>" -TestCases $_ {
                 $envVariablePath = Get-EnvironmentVariable $EnvVariable
-                $commandResult = Get-CommandResult "/usr/libexec/java_home -v${Version}"
-                $commandResult.ExitCode | Should -Be 0
-                $commandResult.Output | Should -Not -BeNullOrEmpty
-                $commandResult.Output | Should -Be $envVariablePath
+                $javaBinPath = Join-Path $envVariablePath "/bin/java"
+                Validate-JavaVersion -JavaCommand "$javaBinPath -version" -ExpectedVersion $Version
             }
 
             if ($_.Title -eq "Default") {
                 It "Version is default" -TestCases $_ {
                     Validate-JavaVersion -JavaCommand "java -version" -ExpectedVersion $Version
                 }
+            }
+        }
+    }
+
+    Context "Maven" {
+        Describe "Maven" {
+            It "Maven" {
+                "mvn --version" | Should -ReturnZeroExitCode
+            }
+        }
+    }
+    
+    Context "Gradle" {
+        Describe "Gradle" {
+            It "Gradle is installed" {
+                "gradle --version" | Should -ReturnZeroExitCode
+            }
+        
+            It "Gradle is installed to /usr/local/bin" {
+                (Get-Command "gradle").Path | Should -BeExactly "/usr/local/bin/gradle"
+            }
+        
+            It "Gradle is compatible with init.d plugins" {
+                "cd /tmp && gradle tasks" | Should -ReturnZeroExitCode
             }
         }
     }

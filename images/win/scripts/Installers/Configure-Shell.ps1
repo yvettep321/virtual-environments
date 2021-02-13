@@ -2,22 +2,22 @@
 $shellPath = "C:\shells"
 New-Item -Path $shellPath -ItemType Directory | Out-Null
 
-# sh and bash <--> C:\msys64\usr\bin\bash.exe
-New-Item -ItemType SymbolicLink -Path "$shellPath\bash.exe" -Target "C:\msys64\bin\bash.exe" | Out-Null
-New-Item -ItemType SymbolicLink -Path "$shellPath\sh.exe" -Target "C:\msys64\bin\sh.exe" | Out-Null
-
-# WSL is available on Windows Server 2019
-if (Test-IsWin19)
-{
-    # winbash <--> C:\Windows\System32\bash.exe
-    New-Item -ItemType SymbolicLink -Path "$shellPath\winbash.exe" -Target "$env:SystemRoot\System32\bash.exe" | Out-Null
-}
+# add a wrapper for C:\msys64\usr\bin\bash.exe
+@'
+@echo off
+setlocal
+IF NOT DEFINED MSYS2_PATH_TYPE set MSYS2_PATH_TYPE=strict
+IF NOT DEFINED MSYSTEM set MSYSTEM=mingw64
+set CHERE_INVOKING=1
+C:\msys64\usr\bin\bash.exe -leo pipefail %*
+'@ | Out-File -FilePath "$shellPath\msys2bash.cmd"
 
 # gitbash <--> C:\Program Files\Git\bin\bash.exe
 New-Item -ItemType SymbolicLink -Path "$shellPath\gitbash.exe" -Target "$env:ProgramFiles\Git\bin\bash.exe" | Out-Null
 
-# msysbash <--> C:\msys64\usr\bin\bash.exe
-New-Item -ItemType SymbolicLink -Path "$shellPath\msysbash.exe" -Target "C:\msys64\usr\bin\bash.exe" | Out-Null
-
-# Add shells to PATH
-Add-MachinePathItem $shellPath
+# WSL is available on Windows Server 2019
+if (Test-IsWin19)
+{
+    # wslbash <--> C:\Windows\System32\bash.exe
+    New-Item -ItemType SymbolicLink -Path "$shellPath\wslbash.exe" -Target "$env:SystemRoot\System32\bash.exe" | Out-Null
+}

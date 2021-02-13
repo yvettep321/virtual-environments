@@ -1,6 +1,19 @@
 {
     "toolcache": [
         {
+            "name": "Ruby",
+            "arch": "x64",
+            "platform" : "win32",
+            "versions": [
+                "2.4",
+                "2.5",
+                "2.6",
+                "2.7",
+                "3.0"
+            ],
+            "default": "2.5"
+        },
+        {
             "name": "Python",
             "url" : "https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json",
             "arch": "x64",
@@ -44,7 +57,6 @@
             "arch": "x64",
             "platform" : "win32",
             "versions": [
-                "8.*",
                 "10.*",
                 "12.*",
                 "14.*"
@@ -56,25 +68,11 @@
             "arch": "x64",
             "platform" : "win32",
             "versions": [
-                "1.9.*",
-                "1.10.*",
-                "1.11.*",
-                "1.12.*",
                 "1.13.*",
                 "1.14.*",
                 "1.15.*"
             ],
-            "default": "1.14.*"
-        },
-        {
-            "name": "Boost",
-            "url" : "https://raw.githubusercontent.com/actions/boost-versions/main/versions-manifest.json",
-            "arch": "x86_64",
-            "platform" : "win32",
-            "toolset": "msvc14.1",
-            "versions": [
-                "1.69.0"
-            ]
+            "default": "1.15.*"
         },
         {
             "name": "Boost",
@@ -92,6 +90,7 @@
         {"name": "MarkdownPS"},
         {"name": "Pester"},
         {"name": "PowerShellGet"},
+        {"name": "PSScriptAnalyzer"},
         {"name": "PSWindowsUpdate"},
         {"name": "SqlServer"},
         {"name": "VSSetup"}
@@ -137,6 +136,12 @@
             ]
         }
     ],
+    "java": {
+        "default": "8",
+        "versions": [
+            "8", "11", "13"
+        ]
+    },
     "android": {
         "platform_min_version": "19",
         "build_tools_min_version": "19.1.0",
@@ -159,8 +164,12 @@
             "cmake;3.6.4111459",
             "cmake;3.10.2.4988404",
             "patcher;v4",
-            "ndk-bundle"
-        ]
+            "cmdline-tools;latest"
+        ],
+        "ndk": {
+            "lts": "21",
+            "latest": "22"
+        }
     },
     "visualStudio": {
         "version" : "2019",
@@ -279,6 +288,11 @@
                 "name": "Microsoft.VisualStudio.Installer.Projects.vsix",
                 "url": "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/VisualStudioClient/vsextensions/MicrosoftVisualStudio2017InstallerProjects/latest/vspackage",
                 "id": "VSInstallerProjects"
+            },
+            {
+                "name": "BizTalkVsix.vsix",
+                "url": "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-biztalk/vsextensions/BizTalk/3.13.2.0/vspackage",
+                "id": "BizTalkProjectSystem.BD1D0FA0-E48A-4270-995F-F110DD9F7838"
             }
         ]
     },
@@ -289,6 +303,19 @@
             "mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2019",
             "mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019",
             "microsoft/aspnetcore-build:1.0-2.0"
+        ]
+    },
+    "pipx": [
+        {
+            "package": "yamllint",
+            "cmd": "yamllint --version"
+        }
+    ],
+    "dotnet": {
+        "versions": [
+            "2.1",
+            "3.1",
+            "5.0"
         ]
     }
 }

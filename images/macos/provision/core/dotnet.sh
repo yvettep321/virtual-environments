@@ -6,7 +6,6 @@
 # https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-install-script
 #
 ###########################################################################
-
 source ~/utils/utils.sh
 
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
@@ -19,35 +18,20 @@ chmod +x ./dotnet-install.sh
 ARGS_LIST=()
 echo "Parsing dotnet SDK (except rc and preview versions) from .json..."
 
-# TO-DO: move the list of versions to install to toolset
-if is_BigSur; then
-    DOTNET_CHANNELS=(
-    'https://raw.githubusercontent.com/dotnet/core/master/release-notes/2.1/releases.json'
-    'https://raw.githubusercontent.com/dotnet/core/master/release-notes/3.1/releases.json'
-    )
-elif is_Less_Catalina; then
-    DOTNET_CHANNELS=(
-    'https://raw.githubusercontent.com/dotnet/core/master/release-notes/2.1/releases.json'
-    )
-else
-    DOTNET_CHANNELS=(
-    'https://raw.githubusercontent.com/dotnet/core/master/release-notes/2.1/releases.json'
-    'https://raw.githubusercontent.com/dotnet/core/master/release-notes/3.0/releases.json'
-    'https://raw.githubusercontent.com/dotnet/core/master/release-notes/3.1/releases.json'
-    )
-fi
+DOTNET_VERSIONS=($(get_toolset_value '.dotnet.versions | .[]'))
 
-for DOTNET_CHANNEL in "${DOTNET_CHANNELS[@]}"; do
+for DOTNET_VERSION in "${DOTNET_VERSIONS[@]}"; do
+    RELEASE_URL="https://raw.githubusercontent.com/dotnet/core/master/release-notes/${DOTNET_VERSION}/releases.json"
     # Old Mono versions don't support NuGet versions from .Net sdk >=2.1.6**, exclude them explicitly from Mojave and HS images
     # https://rider-support.jetbrains.com/hc/en-us/articles/360004180039
     if is_Less_Catalina; then
         ARGS_LIST+=(
-        $(curl -s "$DOTNET_CHANNEL" | \
+        $(curl -s "$RELEASE_URL" | \
         jq -r '.releases[].sdk."version"' | grep -v -E '\-(preview|rc)\d*' | grep -v -E '2.1.[6-9]\d*')
     )
     else
         ARGS_LIST+=(
-        $(curl -s "$DOTNET_CHANNEL" | \
+        $(curl -s "$RELEASE_URL" | \
         jq -r '.releases[].sdk."version"' | grep -v -E '\-(preview|rc)\d*')
     )
     fi
@@ -70,5 +54,6 @@ if [ $(dotnet --list-sdks | wc -l) -lt "1" ]; then
 fi
 
 echo 'export PATH="$PATH:$HOME/.dotnet/tools"' >> "$HOME/.bashrc"
-
 echo "Dotnet operations have been completed successfully..."
+
+invoke_tests "Common" ".NET"

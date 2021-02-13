@@ -1,17 +1,19 @@
 Import-Module "$PSScriptRoot/../helpers/Common.Helpers.psm1"
-Import-Module "$PSScriptRoot/../helpers/Tests.Helpers.psm1"
+Import-Module "$PSScriptRoot/../helpers/Tests.Helpers.psm1" -DisableNameChecking
 
-Describe "Node.JS" {
+$os = Get-OSVersion
+
+Describe "Node.js" {
     BeforeAll {
         $os = Get-OSVersion
-        $expectedNodeVersion = if ($os.IsHigherThanMojave) { "v12.*" } else { "v8.*" }
+        $expectedNodeVersion = if ($os.IsHigherThanMojave) { "v14.*" } else { "v8.*" }
     }
 
-    It "Node.JS is installed" {
+    It "Node.js is installed" {
         "node --version" | Should -ReturnZeroExitCode
     }
 
-    It "Node.JS $expectedNodeVersion is default" {
+    It "Node.js $expectedNodeVersion is default" {
         (Get-CommandResult "node --version").Output | Should -BeLike $expectedNodeVersion
     }
 
@@ -24,18 +26,18 @@ Describe "Node.JS" {
     }
 }
 
-Describe "NVM" {
+Describe "nvm" {
     BeforeAll {
         $nvmPath = Join-Path $env:HOME ".nvm" "nvm.sh"
         $nvmInitCommand = ". $nvmPath > /dev/null 2>&1 || true"
     }
-    
-    It "Nvm is installed" {
+
+    It "nvm is installed" {
         $nvmPath | Should -Exist
         "$nvmInitCommand && nvm --version" | Should -ReturnZeroExitCode
     }
 
-    Context "Nvm versions" {
+    Context "nvm versions" {
         $NVM_VERSIONS = @(6, 8, 10, 12)
         $testCases = $NVM_VERSIONS | ForEach-Object { @{NvmVersion = $_} }
 
@@ -43,8 +45,20 @@ Describe "NVM" {
             param (
                 [string] $NvmVersion
             )
-            
+
             "$nvmInitCommand && nvm ls $($NvmVersion)" | Should -ReturnZeroExitCode
         }
+    }
+}
+
+Describe "AppCenterCLI" {
+    It "App Center CLI" {
+        "appcenter --version" | Should -ReturnZeroExitCode
+    }
+}
+
+Describe "Newman" -Skip:($os.IsHighSierra -or $os.IsMojave) {
+    It "Newman" {
+        "newman --version" | Should -ReturnZeroExitCode
     }
 }

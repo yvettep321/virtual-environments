@@ -1,4 +1,5 @@
 #!/bin/bash -e -o pipefail
+source ~/utils/utils.sh
 
 echo "Get the latest Stack version..."
 StackRelease=$(curl -s "https://api.github.com/repos/commercialhaskell/stack/releases/latest")
@@ -7,7 +8,7 @@ StackVersion=$(echo $StackRelease | jq -r '.name' | cut -c2-)
 StackArchive="/tmp/stack.tar.gz"
 
 echo "Download stack version $StackVersion..."
-wget $DownloadUrl -O $StackArchive
+download_with_retries $DownloadUrl "/tmp" "stack.tar.gz"
 
 StackToolcachePath="$AGENT_TOOLSDIRECTORY/stack/$StackVersion"
 DestinationPath="$StackToolcachePath/x64"
@@ -20,3 +21,5 @@ tar -xzf $StackArchive -C $DestinationPath --strip 1
 touch $StackToolcachePath/x64.complete
 
 echo "export PATH="\$PATH":$DestinationPath" >> "$HOME/.bashrc"
+
+invoke_tests "Common" "Stack"
